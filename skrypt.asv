@@ -22,5 +22,8 @@ us = resample(double(prbss), 50,1);
 % plot(prbss)
 
 y2=normalize(y,'range');
- plot(xcorr(us, y2))
+
+plot(us)
+
+% plot(xcorr(us, prbss))
 
