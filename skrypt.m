@@ -1,50 +1,19 @@
 clear all;
-load('data.mat')
-opdata=data_aq;
-load('data_el')
-eldata=data_aq;
+load('data.mat');opdata=normalize(data_aq,'range',[-1 1]);
+load('data_el');eldata=normalize(data_aq,'range',[-1 1]);
 clear data_aq;
-
-%filtracja sygna³u analogowego
-filtr1 = fir1(51, [13.45/50 17.45/50]);
-y = filter(filtr1, 1, opdata);
-[up] = envelope(y, 5, 'rms');
-low = fir1(51, 2/50);   %filtr dolnoprzepustowy
-y = filter(low, 1, up);
-
-%% eldata
-P2 = abs(fft(eldata)/length(eldata));
-P1 = P2(1:length(eldata)/2+1);
-P1(2:end-1) = 2*P1(2:end-1);
-f = 100e9*(0:(length(eldata)/2))/length(eldata);
-semilogy(f,P1) 
-title({'eldata'})
-xlabel('f (Hz)')
-ylabel('|eldata(f)|')
-xline(100e9/50,'-','2e9');
 %%
-
-%odbiór sygna³u el
-dwn = downsample(eldata(38:end),50);
-nor = normalize(dwn);
-for i= 1:length(nor)
-    if nor(i) > 0
-        r(i) = 1;
-    else
-        r(i) = -1;
-    end
-end
-up2 = upsample(r, 50,1);
-
-%usuniêcie przesuniêcia
-d = finddelay(up2,y);
-syg = circshift(up2, d);
-%op = finddelay(cs,y)
-
-y_nor=normalize(y);
-syg_nor = normalize(syg);
-
-figure()
-plot(syg_nor)
-hold on 
-plot(y_nor)
+fitleredeldata = filter(filtel,eldata);
+rsampled=resample(fitleredeldata(24:end),1,50);
+idealdata=sign(rsampled);
+%%
+afterbp=filter(filtbp,opdata);
+hlbt=abs(hilbert(afterbp-mean(afterbp)));
+fltopt = normalize(filter(filtel,hlbt),'range',[-1 1]);
+%%
+rsampledopt=resample(fltopt(41:end),1,50);
+signedsig=sign(rsampledopt);
+d = finddelay(signedsig,idealdata);
+sig = circshift(signedsig, d);
+%%
+max(sig(167:end)-idealdata(167:end))
